@@ -1,0 +1,38 @@
+{
+    "activeFile": "Tiles.tsx",
+    "expandedProjectPaths": [
+        "."
+    ],
+    "fileStates": {
+        "Map.tmx": {
+            "scale": 0.125,
+            "selectedLayer": 0,
+            "viewCenter": {
+                "x": 3068,
+                "y": 3944
+            }
+        },
+        "Tiles.tsx": {
+            "dynamicWrapping": true,
+            "scaleInDock": 0.12,
+            "scaleInEditor": 0.12
+        }
+    },
+    "last.imagePath": "V:/Other/Downloads/craftpix-net-381103-free-simple-summer-top-down-vector-tileset/PNG",
+    "map.height": 30,
+    "map.lastUsedFormat": "tmx",
+    "map.tileHeight": 40,
+    "map.tileWidth": 40,
+    "map.width": 40,
+    "openFiles": [
+        "Map.tmx",
+        "Tiles.tsx"
+    ],
+    "project": "farmingpygame.tiled-project",
+    "recentFiles": [
+        "Map.tmx",
+        "Tiles.tsx"
+    ],
+    "tileset.lastUsedFormat": "tsx",
+    "tileset.type": 1
+}

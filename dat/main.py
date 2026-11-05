@@ -58,8 +58,8 @@ def update(dt):
 class background:
     def __init__(self, screen):
         self.screen = screen
-        self.mainbacking = pygame.image.load("assets/textures/placeholderbackground.svg").convert_alpha()
-        self.image = pygame.transform.scale(self.mainbacking, (1000,1000))
+        self.mainbacking = pygame.image.load("assets/textures/map.png").convert_alpha()
+        self.image = pygame.transform.scale(self.mainbacking, (6000,6000))
         self.backpos = Vector2(0, 0)      
 
     def update(self):
