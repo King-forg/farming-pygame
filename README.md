@@ -4,8 +4,9 @@
 | Control             | Keybind |
 | ------------------- | ------- |
 | Movement            | WASD    |
-| Pick up/Interact    | F       |
-| Inventory           | G       |
+| Menu                | F       |
+| Inventory           | R       |
+| Pick up/interact    | E       |
 | | |
 
 # __Installation__
