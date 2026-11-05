@@ -1,31 +1,31 @@
 import pygame
 import sys
+from pathlib import Path
 from pygame.locals import *
 from pygame.math import Vector2
 
 velocity = 0
 movement_direction = Vector2(0, 0)
+menu_open = True
+ASSET_DIR = Path(__file__).resolve().parent / "assets" / "textures"
 
-####
-menu = True
-####
 def update(dt):
-####
-    global velocity, movement_direction, screen, h, w
-####
+    global velocity, movement_direction, menu_open
     for event in pygame.event.get():
         if event.type == QUIT:
             pygame.quit()
             sys.exit()
-########
 
-        if event.type == MOUSEBUTTONDOWN():
-            x,y = event.pos
-            for button in menu.backgame:
-                if button.menu.backgame.collidepoint(x,y):
-                    menu.buttonpress()
+        if event.type == KEYDOWN and event.key == K_f:
+            menu_open = not menu_open
+
+        if event.type == MOUSEBUTTONDOWN and menu_open:
+            menu.buttonpress(event.pos)
+            menu.quitbutton(event.pos)
+
+    if menu_open:
+        return
             
-########
     keys = pygame.key.get_pressed()
 
     running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
@@ -67,20 +67,10 @@ def update(dt):
     else:
         entity.stand()
 
-    ####
-
-    if menu.menuupdate == True:
-        menu.menupress(screen)
-    else:
-        gui.update(screen)
-
-    ####
-
-
 class background:
     def __init__(self, screen):
         self.screen = screen
-        self.mainbacking = pygame.image.load("assets/textures/map.png").convert_alpha()
+        self.mainbacking = pygame.image.load(ASSET_DIR / "Map.png").convert_alpha()
         self.image = pygame.transform.scale(self.mainbacking, (6000,6000))
         self.backpos = Vector2(0, 0)      
 
@@ -96,11 +86,11 @@ class entity:
         self.screen = screen
 
         self.sprites = {
-            "stand": pygame.image.load("assets/textures/placeholdermainentity.png").convert_alpha(),
-            "w": pygame.image.load("assets/textures/placeholdermainentityup.png").convert_alpha(),
-            "s": pygame.image.load("assets/textures/placeholdermainentitydown.png").convert_alpha(),
-            "a": pygame.image.load("assets/textures/placeholdermainentityleft.png").convert_alpha(),
-            "d": pygame.image.load("assets/textures/placeholdermainentityright.png").convert_alpha()
+            "stand": pygame.image.load(ASSET_DIR / "placeholdermainentity.png").convert_alpha(),
+            "w": pygame.image.load(ASSET_DIR / "placeholdermainentityup.png").convert_alpha(),
+            "s": pygame.image.load(ASSET_DIR / "placeholdermainentitydown.png").convert_alpha(),
+            "a": pygame.image.load(ASSET_DIR / "placeholdermainentityleft.png").convert_alpha(),
+            "d": pygame.image.load(ASSET_DIR / "placeholdermainentityright.png").convert_alpha()
         }
 
         for direction in self.sprites:
@@ -119,70 +109,53 @@ class entity:
         self.screen.blit(self.sprites[self.direction],self.mainentpos)
 
 
-######################################################################################################
-
 class gui:
     def __init__(self):
-        self.hotbar_back = pygame.image.load("assets/textures/placeholdermainentity.png")
+        self.hotbar_back = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
         self.hotbar_back = pygame.transform.scale(self.hotbar_back, (500,150))
-        self.hotbar_back.bottom = (w//2, h)
-        self.cornericon = pygame.image.load("assets/textures/placeholdermainentity.png")
+        self.hotbar_back_rect = self.hotbar_back.get_rect(midbottom = (w//2,h))
+        self.cornericon = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
         self.cornericon = pygame.transform.scale(self.cornericon, (w//10,w//10))
-        self.cornericon.bottomleft = (0, h)
+        self.cornericon_rect = self.cornericon.get_rect(bottomleft = (0,h))
 
     def update(self):
-        pygame.draw.rect(screen, (138, 138, 138, [30]), self.hotbar_back)
-        pygame.draw.rect(screen, (138, 138, 138), self.cornericon, border_top_right_radius=35)
-    
+        screen.blit(self.hotbar_back, self.hotbar_back_rect)
+        screen.blit(self.cornericon, self.cornericon_rect)
+
 class menu:
     def __init__(self):
-        self.menuback = pygame.image.load("assets/textures/placeholderbackground.svg")
-        self.menuback = pygame.transform.scale(self.menuback, (w,h))
-        self.translucent = pygame.rect(w,h)
-        self.translucent.center = (w//2,h//2)
-        self.backgame = pygame.rect(300,100)
-        self.backgame.center = (w//2, h//2)
-        self.quit = pygame.rect (300,100)
-        self.quit.center = (w//2,h//2 + 150)
+        self.translucent = pygame.Surface((w, h), pygame.SRCALPHA)
+        self.translucent.fill((232, 232, 232, 50))
+        self.backgame = pygame.Rect(0, 0, 300, 100)
+        self.backgame.center = (w // 2, h // 2)
+        self.quit = pygame.Rect(0, 0, 300, 100)
+        self.quit.center = (w // 2, h // 2 + 150)
 
     def menupress(self, screen):
-        pygame.draw.rect(screen, self.translucent, (232, 232, 232, [50]))
-        pygame.draw.rect(screen, self.backgame, (44, 219, 0), border_radius=12)
-        pygame.draw.rect(screen, self.quit, (168, 62, 50), border_radius=12)
+        screen.blit(self.translucent, (0, 0))
+        pygame.draw.rect(screen, (44, 219, 0), self.backgame, border_radius=12)
+        pygame.draw.rect(screen, (168, 62, 50), self.quit, border_radius=12)
 
-    def menuupdate(self):
-        global menu
-        self.keys = pygame.key.get_pressed()
-        f = int(self.keys[pygame.K_f])
-        if f > 0:
-            return False
-        elif f < 0:
-            menu = True
-            return True
+    def buttonpress(self, mousepos):
+        global menu_open
+        if self.backgame.collidepoint(mousepos):
+            menu_open = False
 
-    def buttonpress(self):
-        global menu
-        self.mousepos = pygame.mouse.get_pos()
-        if pygame.self.backgame.collidepoint(self.mousepos) == True:
-            if menu == True:
-                menu = False
-
-    def quitbutton(self):
-        global menu
-        self.mousepos = pygame.mouse.get_pos()
-        if pygame.self.quit.collidepoint(self.mousepos):
-            if menu == True:
-                pygame.quit()
-                sys.exit()
+    def quitbutton(self, mousepos):
+        if self.quit.collidepoint(mousepos):
+            pygame.quit()
+            sys.exit()
 
         
-
-############################################################################################################
  
 def draw(screen, backg, entity):
     screen.fill((189, 214, 255))
     backg.update()
     entity.draw()
+    if menu_open:
+        menu.menupress(screen)
+    else:
+        gui.update()
     pygame.display.flip()
 
 
@@ -196,9 +169,9 @@ screen = pygame.display.set_mode((w,h))
 
 backg = background(screen)
 entity = entity(screen, w, h)
-####
-menu = menu(w, h)
-####
+menu = menu()
+gui = gui()
+
 dt = 0
 while True:
     update(dt)
