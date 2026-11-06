@@ -5,7 +5,8 @@ from pygame.locals import *
 from pygame.math import Vector2
 from pygame._sdl2.video import Window
 
-
+basewidth = 1920
+baseheight = 1080
 velocity = 0
 movement_direction = Vector2(0, 0)
 menu_open = True
@@ -14,21 +15,22 @@ fullscreen = False
 fpsstart = 0
 framecount = 0
 starttime = pygame.time.get_ticks()
+display_fps = 0
 
 def fpsmonitor():
-    global fpsstart, framecount, starttime
+    global framecount, starttime, display_fps
     currenttime = pygame.time.get_ticks()
     elapsed_time = currenttime - starttime
     framecount += 1
 
     if elapsed_time > 1000:
-        fps = framecount / (elapsed_time / 1000.0)
+        display_fps = framecount / (elapsed_time / 1000.0)
         starttime = currenttime
         framecount = 0
 
-    fpstext = font.render("FPS: ")
-
-# https://github.com/HoodedUnicorn/Python-FPS-Monitor/blob/master/FPS-Monitor.py
+    fpstext = tinyfont.render("FPS: {:.2f}".format(display_fps), True, (0, 255, 0), (0, 0, 0, 50))
+    fpstext_rect = fpstext.get_rect(topright=(w, 0))
+    screen.blit(fpstext, fpstext_rect)
 
 def update(dt):
     global velocity, movement_direction, menu_open
@@ -50,6 +52,8 @@ def update(dt):
                     window.set_fullscreen()
                     fullscreen = True
 
+                resizelayout()
+
                 screen = window.get_surface()
                 backg.screen = screen
                 entity.screen = screen
@@ -57,6 +61,9 @@ def update(dt):
         if event.type == MOUSEBUTTONDOWN and menu_open:
             menu.buttonpress(event.pos)
             menu.quitbutton(event.pos)
+
+        if event.type in (VIDEORESIZE, getattr(pygame, "WINDOWRESIZED", -1)):
+            resizelayout()
 
     if menu_open:
         return
@@ -110,7 +117,9 @@ class background:
         self.backpos = Vector2(0, 0)      
 
     def update(self):
-        screen.blit(self.image, (self.backpos.x,self.backpos.y))
+        self.screen.blit(self.image, (self.backpos.x,self.backpos.y))
+
+    
 
     def playermove(self,w,a,s,d, movement):
         self.backpos.x -= movement.x
@@ -131,8 +140,15 @@ class entity:
         for direction in self.sprites:
             self.sprites[direction] = pygame.transform.scale(self.sprites[direction], (200,200))
 
-        self.mainentpos = Vector2(w//2 - 50, h//2 - 50)
+        self.mainentpos = Vector2(w//2 - 100, h//2 - 100)
         self.direction = "stand"
+
+    def resize(self,w,h,scale):
+        size = max(1, round(200*scale))
+
+        for direction, sprite in self.sprites.items():
+            self.sprites[direction] = pygame.transform.scale(sprite, (size,size))
+        self.mainentpos = Vector2(w//2-size//2,h//2-size//2)
 
     def move(self, direction):
         self.direction = direction
@@ -143,34 +159,29 @@ class entity:
     def draw(self):
         self.screen.blit(self.sprites[self.direction],self.mainentpos)
 
-
 class gui:
     def __init__(self):
 
         self.hotbar = pygame.Rect((0, 0, 700,150))
         self.hotbar.midbottom = (w//2,h)
-        # self.hotbar_back = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
-        # self.hotbar_back = pygame.transform.scale(self.hotbar_back, (700,150))
-        # self.hotbar_back_rect = self.hotbar_back.get_rect(midbottom = (w//2,h))
         self.cornericon = pygame.Rect(0, 0, w // 10, w // 10)
         self.cornericon.bottomleft = (0, h)
-        # self.cornericon = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
-        # self.cornericon = pygame.transform.scale(self.cornericon, (w//10,w//10))
-        # self.cornericon_rect = self.cornericon.get_rect(bottomleft = (0,h))
         self.sideicons = pygame.Rect(0, 0, 100, 500)
         self.sideicons.midright = (w, h // 2)
-        # self.sideicons = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
-        # self.sideicons = pygame.transform.scale(self.sideicons, (100,500))
-        # self.sideicons_rect = self.sideicon.get_rect(midright = (w,h//2))
 
     def update(self):
-        # screen.blit(self.hotbar_back, self.hotbar_back_rect)
         pygame.draw.rect(screen, (60, 60, 60), self.hotbar, border_radius=8)
-        #screen.blit(self.cornericon, self.cornericon_rect)
         pygame.draw.rect(screen, (90, 140, 90), self.cornericon,border_radius=8, border_top_right_radius=30)        
-        #screen.blit(self.sideicons, self.sideicons_rect)
         pygame.draw.rect(screen, (80, 80, 80), self.sideicons, border_radius=8)
 
+    def resize(self, w, h, scale):
+        self.hotbar.size = (round(700 * scale), round(150 * scale))
+        self.hotbar.midbottom = (w // 2, h)
+        icon_size = round(192 * scale)
+        self.cornericon.size = (icon_size, icon_size)
+        self.cornericon.bottomleft = (0, h)
+        self.sideicons.size = (round(100 * scale), round(500 * scale))
+        self.sideicons.midright = (w, h // 2)
 
 class menu:
     def __init__(self):
@@ -188,6 +199,27 @@ class menu:
         self.quit_text_rect.center = self.quit.center
         self.guiicon = pygame.Surface((w,h))
         
+    def resize(self, w, h, scale):
+        buttonwidth = round(300 * scale)
+        buttonheight = round(100 * scale)
+        font_size = max(1, round(32 * scale))
+
+        self.translucent = pygame.Surface((w, h), pygame.SRCALPHA)
+        self.translucent.fill((232,232,232,50))
+
+        self.backgame.size = (buttonwidth, buttonheight)
+        self.backgame.center = (w // 2, h // 2)
+
+        self.quit.size = (buttonwidth, buttonheight)
+        self.quit.center = (w//2, h//2 + round(150 * scale))
+
+        font = pygame.font.Font(None, font_size)
+
+        self.backgame_text = font.render("Continue", True, (255,255,255))
+        self.backgame_text_rect = self.backgame_text.get_rect(center = self.backgame.center)
+
+        self.quit_text = font.render("Quit", True, (255, 255, 255))
+        self.quit_text_rect = self.quit_text.get_rect(center = self.quit.center)
 
     def menupress(self, screen):
         screen.blit(self.translucent, (0, 0))
@@ -206,7 +238,19 @@ class menu:
             pygame.quit()
             sys.exit()
 
-        
+def resizelayout():
+    global screen, w, h
+    screen = window.get_surface()
+    w, h = screen.get_size()
+
+    scale  = min(w/basewidth, h/baseheight)
+
+    entity.resize(w, h, scale)
+    gui.resize(w,h, scale)
+    menu.resize(w, h,scale)
+
+    backg.screen = screen
+    entity.screen = screen
  
 def draw(window, screen, backg, entity):
     screen = window.get_surface()
@@ -223,6 +267,7 @@ def draw(window, screen, backg, entity):
     else:
         gui.update()
 
+    fpsmonitor()
     window.flip()
 
 
@@ -237,7 +282,8 @@ w,h = screen.get_size()
 fps = 60.0
 fpsClock = pygame.time.Clock()
 
-font = pygame.font.Font('freesansbold.ttf', 32)
+font = pygame.font.SysFont('freesans', 32)
+tinyfont = pygame.font.SysFont('freesans', 10)
 
 backg = background(screen)
 entity = entity(screen, w, h)
