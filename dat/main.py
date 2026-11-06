@@ -129,20 +129,31 @@ class entity:
 
 class gui:
     def __init__(self):
-        self.hotbar_back = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
-        self.hotbar_back = pygame.transform.scale(self.hotbar_back, (700,150))
-        self.hotbar_back_rect = self.hotbar_back.get_rect(midbottom = (w//2,h))
-        self.cornericon = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
-        self.cornericon = pygame.transform.scale(self.cornericon, (w//10,w//10))
-        self.cornericon_rect = self.cornericon.get_rect(bottomleft = (0,h))
-        self.sideicons = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
-        self.sideicons = pygame.transform.scale(self.sideicons, (100,500))
-        self.sideicons_rect = self.sideicon.get_rect(midright = (w,h//2))
+
+        self.hotbar = pygame.Rect((0, 0, 700,150))
+        self.hotbar.midbottom = (w//2,h)
+        # self.hotbar_back = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
+        # self.hotbar_back = pygame.transform.scale(self.hotbar_back, (700,150))
+        # self.hotbar_back_rect = self.hotbar_back.get_rect(midbottom = (w//2,h))
+        self.cornericon = pygame.Rect(0, 0, w // 10, w // 10)
+        self.cornericon.bottomleft = (0, h)
+        # self.cornericon = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
+        # self.cornericon = pygame.transform.scale(self.cornericon, (w//10,w//10))
+        # self.cornericon_rect = self.cornericon.get_rect(bottomleft = (0,h))
+        self.sideicons = pygame.Rect(0, 0, 100, 500)
+        self.sideicons.midright = (w, h // 2)
+        # self.sideicons = pygame.image.load(ASSET_DIR / "placeholdermainentity.png")
+        # self.sideicons = pygame.transform.scale(self.sideicons, (100,500))
+        # self.sideicons_rect = self.sideicon.get_rect(midright = (w,h//2))
 
     def update(self):
-        screen.blit(self.hotbar_back, self.hotbar_back_rect)
-        screen.blit(self.cornericon, self.cornericon_rect)
-        screen.blit(self.sideicons, self.sideicons_rect)
+        # screen.blit(self.hotbar_back, self.hotbar_back_rect)
+        pygame.draw.rect(screen, (60, 60, 60), self.hotbar, border_radius=8)
+        #screen.blit(self.cornericon, self.cornericon_rect)
+        pygame.draw.rect(screen, (90, 140, 90), self.cornericon,border_radius=8, border_top_right_radius=30)        
+        #screen.blit(self.sideicons, self.sideicons_rect)
+        pygame.draw.rect(screen, (80, 80, 80), self.sideicons, border_radius=8)
+
 
 class menu:
     def __init__(self):
@@ -155,7 +166,11 @@ class menu:
         self.backgame_text_rect.center = self.backgame.center
         self.quit = pygame.Rect(0, 0, 300, 100)
         self.quit.center = (w // 2, h // 2 + 150)
+        self.quit_text = pygame.font.render("Quit", True, (255,255,255))
+        self.quit_text_rect = self.backgame_text.get_rect()
+        self.quit_text_rect.center = self.quit.center
         self.guiicon = pygame.Surface(w,h)
+        
 
     def menupress(self, screen):
         screen.blit(self.translucent, (0, 0))
