@@ -11,7 +11,24 @@ movement_direction = Vector2(0, 0)
 menu_open = True
 ASSET_DIR = Path(__file__).resolve().parent / "assets" / "textures"
 fullscreen = False
+fpsstart = 0
+framecount = 0
+starttime = pygame.time.get_ticks()
 
+def fpsmonitor():
+    global fpsstart, framecount, starttime
+    currenttime = pygame.time.get_ticks()
+    elapsed_time = currenttime - starttime
+    framecount += 1
+
+    if elapsed_time > 1000:
+        fps = framecount / (elapsed_time / 1000.0)
+        starttime = currenttime
+        framecount = 0
+
+    fpstext = font.render("FPS: ")
+
+# https://github.com/HoodedUnicorn/Python-FPS-Monitor/blob/master/FPS-Monitor.py
 
 def update(dt):
     global velocity, movement_direction, menu_open
@@ -161,22 +178,23 @@ class menu:
         self.translucent.fill((232, 232, 232, 50))
         self.backgame = pygame.Rect(0, 0, 300, 100)
         self.backgame.center = (w // 2, h // 2)
-        self.backgame_text = pygame.font.render("Continue", True, (255,255,255))
+        self.backgame_text = pygame.font.Font(None, 32).render("Continue", True, (255,255,255))
         self.backgame_text_rect = self.backgame_text.get_rect()
         self.backgame_text_rect.center = self.backgame.center
         self.quit = pygame.Rect(0, 0, 300, 100)
         self.quit.center = (w // 2, h // 2 + 150)
-        self.quit_text = pygame.font.render("Quit", True, (255,255,255))
-        self.quit_text_rect = self.backgame_text.get_rect()
+        self.quit_text = pygame.font.Font(None, 32).render("Quit", True, (255,255,255))
+        self.quit_text_rect = self.quit_text.get_rect()
         self.quit_text_rect.center = self.quit.center
-        self.guiicon = pygame.Surface(w,h)
+        self.guiicon = pygame.Surface((w,h))
         
 
     def menupress(self, screen):
         screen.blit(self.translucent, (0, 0))
         pygame.draw.rect(screen, (44, 219, 0), self.backgame, border_radius=12)
-        pygame.blit(self.backgame_text, self.backgame_text_rect)
+        screen.blit(self.backgame_text, self.backgame_text_rect)
         pygame.draw.rect(screen, (168, 62, 50), self.quit, border_radius=12)
+        screen.blit(self.quit_text, self.quit_text_rect)
 
     def buttonpress(self, mousepos):
         global menu_open
@@ -216,11 +234,10 @@ window.maximize()
 screen = window.get_surface()
 w,h = screen.get_size()
 
-
 fps = 60.0
 fpsClock = pygame.time.Clock()
 
-normal = pygame.font.Font('freesansbold.ttf', 32)
+font = pygame.font.Font('freesansbold.ttf', 32)
 
 backg = background(screen)
 entity = entity(screen, w, h)

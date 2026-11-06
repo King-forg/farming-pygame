@@ -1,0 +1,6 @@
+cd /workspaces/farming-pygame
+./start-gui.sh
+
+cd /workspaces/farming-pygame
+source .venv-1/bin/activate
+DISPLAY=:1 python dat/main.py
