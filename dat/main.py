@@ -111,29 +111,16 @@ def update(dt):
 
     if velocity > 0:
         movement = movement_direction * velocity * dt
-        backg.playermove(False, False, False, False, movement)
+        player_world = backg.getplayerworldpos(entity.hitbox.center)
+        newworld = player_world + movement
+
+        newhitbox = entity.hitbox.copy()
+        newhitbox.center = (round(newworld.x),round(newworld.y))
+
+        if not backg.checkcollision(newhitbox):
+            backg.playermove(False, False, False, False, movement)
     else:
         entity.stand()
-
-'''
-class collisions:
-    def __init__(self, filename):
-        self.tmx = pytmx.load_pygame(filename)
-
-        self.rects = []
-
-        collision_layer = self.tmx.get_layer_by_name("Collisions")
-
-        for obj in collision_layer:
-            if obj.width > 0 and obj.height > 0:
-                rect = pygame.Rect(obj.x, obj.y, obj.width, obj.height)
-
-                self.rects.append(rect)
-        print(f"Loaded {len(self.rects)} collision rects")
-
-    def collides(self, rect):
-        return any(rect.colliderext(wall)) for wall in self.rects
-'''
 
 class background:
 
@@ -143,7 +130,21 @@ class background:
         self.screen = screen
         mappath = Path(__file__).resolve().parent / "farmrpg assets" / "map2.tmx"
         self.tmx = pytmx.load_pygame(str(mappath))
+        self.collisions = []
+
+        collisionlayer = self.tmx.get_layer_by_name("Collisions")
+
+        for obj in collisionlayer:
+            if obj.width > 0 and obj.height > 0:
+                rect = pygame.Rect(obj.x, obj.y, obj.width, obj.height)
+                self.collisions.append(rect)
+        print(f"Loaded {len(self.collisions)} collision rects")
+
+        print("First collision:", self.collisions[0])
+        print("Tile size:", self.tmx.tilewidth, self.tmx.tileheight)
         self.scale = mapscale
+        print("Map scale:", self.scale)
+
         self.backpos = Vector2(
             w / 2 - 1590 * self.scale,
             h / 2 - 1920 * self.scale
@@ -189,6 +190,14 @@ class background:
 
                     self.scaledtiles[image_id] = scaledimage
 
+    def checkcollision(self, player_rect):
+        for wall in self.collisions:
+            if player_rect.colliderect(wall):
+                return True
+        return False
+
+    def getplayerworldpos(self, screen_pos):
+        return Vector2((screen_pos[0] - self.backpos.x) / self.scale, (screen_pos[1] - self.backpos.y) / self.scale) 
 
     def resize(self, scale):
         old_scale = self.scale
@@ -246,12 +255,21 @@ class entity:
         self.mainentpos = Vector2(w//2 - 100, h//2 - 100)
         self.direction = "stand"
 
+        self.hitbox = pygame.Rect(0, 0, 15, 15)
+        self.hitbox.center = (round(self.mainentpos.x + self.sprites["stand"].get_width() / 2), round(self.mainentpos.y + self.sprites["stand"].get_height() / 2))
+
+
     def resize(self,w,h,scale):
         size = max(1, round(spritesize * scale))
 
         for direction, sprite in self.source_sprites.items():
             self.sprites[direction] = pygame.transform.scale(sprite, (size, size))
         self.mainentpos = Vector2(w//2-size//2,h//2-size//2)
+
+        self.hitbox.center = (
+            round(self.mainentpos.x + size / 2),
+            round(self.mainentpos.y + size / 2)
+        )
 
     def move(self, direction):
         self.direction = direction
@@ -369,6 +387,8 @@ def draw(window, screen, backg, entity):
     backg.update()
     entity.draw()
 
+    # pygame.draw.rect(screen, (255, 0, 0), entity.hitbox, 2)
+
     if menu_open:
         menu.menupress(screen)
     else:
@@ -376,6 +396,8 @@ def draw(window, screen, backg, entity):
 
     fpsmonitor()
     window.flip()
+
+
 
 
 pygame.init()
