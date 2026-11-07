@@ -4,9 +4,13 @@ from pathlib import Path
 from pygame.locals import *
 from pygame.math import Vector2
 from pygame._sdl2.video import Window
+import pytmx
+
 
 basewidth = 1920
 baseheight = 1080
+mapscale = 7.5
+spritesize = 100
 velocity = 0
 movement_direction = Vector2(0, 0)
 menu_open = True
@@ -15,20 +19,22 @@ fullscreen = False
 fpsstart = 0
 framecount = 0
 starttime = pygame.time.get_ticks()
-display_fps = 0
+displayfps = 0
+collisions = []
+
 
 def fpsmonitor():
-    global framecount, starttime, display_fps
+    global framecount, starttime, displayfps
     currenttime = pygame.time.get_ticks()
     elapsed_time = currenttime - starttime
     framecount += 1
 
     if elapsed_time > 1000:
-        display_fps = framecount / (elapsed_time / 1000.0)
+        displayfps = framecount / (elapsed_time / 1000.0)
         starttime = currenttime
         framecount = 0
 
-    fpstext = tinyfont.render("FPS: {:.2f}".format(display_fps), True, (0, 255, 0), (0, 0, 0, 50))
+    fpstext = tinyfont.render("FPS: {:.2f}".format(displayfps), True, (0, 255, 0), (0, 0, 0, 50))
     fpstext_rect = fpstext.get_rect(topright=(w, 0))
     screen.blit(fpstext, fpstext_rect)
 
@@ -73,10 +79,10 @@ def update(dt):
     running = keys[pygame.K_LSHIFT] or keys[pygame.K_RSHIFT]
 
     if running:
-        max_velocity = 350
+        max_velocity = 87.5
         acceleration = 1200
     else:
-        max_velocity = 270
+        max_velocity = 43.75
         acceleration = 600
 
     dx = int(keys[pygame.K_d]) - int(keys[pygame.K_a])
@@ -109,33 +115,113 @@ def update(dt):
     else:
         entity.stand()
 
+'''
+class collisions:
+    def __init__(self, filename):
+        self.tmx = pytmx.load_pygame(filename)
+
+        self.rects = []
+
+        collision_layer = self.tmx.get_layer_by_name("Collisions")
+
+        for obj in collision_layer:
+            if obj.width > 0 and obj.height > 0:
+                rect = pygame.Rect(obj.x, obj.y, obj.width, obj.height)
+
+                self.rects.append(rect)
+        print(f"Loaded {len(self.rects)} collision rects")
+
+    def collides(self, rect):
+        return any(rect.colliderext(wall)) for wall in self.rects
+'''
+
 class background:
+
+    chunksize = 512
+
     def __init__(self, screen):
         self.screen = screen
-        self.mainbacking = pygame.image.load(ASSET_DIR / "Map.png").convert_alpha()
-        self.map_size = 6000
-        self.scale = 1.0
-        self.image = pygame.transform.scale(self.mainbacking, (self.map_size, self.map_size))
-        self.backpos = Vector2(0, 0)      
+        mappath = Path(__file__).resolve().parent / "farmrpg assets" / "map2.tmx"
+        self.tmx = pytmx.load_pygame(str(mappath))
+        self.scale = mapscale
+        self.backpos = Vector2(
+            w / 2 - 1590 * self.scale,
+            h / 2 - 1920 * self.scale
+        )
         self.viewport_size = screen.get_size()
+
+        self.chunks = {}
+        self.scaledtiles = {}
+
+        for layer_index in self.tmx.visible_tile_layers:
+            layer = self.tmx.layers[layer_index]
+
+            if not isinstance(layer, pytmx.TiledTileLayer):
+                continue
+
+            for x, y , image in layer.tiles():
+
+                world_x = x * self.tmx.tilewidth
+                world_y = y * self.tmx.tileheight
+
+                chunkx = world_x // self.chunksize
+                chunky = world_y // self.chunksize
+
+                key = (chunkx, chunky)
+
+                self.chunks.setdefault(key, []).append( (world_x, world_y, image, layer_index))
+
+        print(f"Loaded all {len(self.chunks)} chunks")
+        self.updatetilecache()
+
+    def updatetilecache(self):
+        self.scaledtiles.clear()
+
+        for tiles in self.chunks.values():
+            for x, y, image, layer in tiles:
+                image_id = id(image)
+
+                if image_id not in self.scaledtiles:
+                    tile_width = max(1, round(image.get_width() * self.scale))
+                    tile_height = max(1, round(image.get_height() * self.scale))
+
+                    scaledimage = pygame.transform.scale(image, (tile_width, tile_height))
+
+                    self.scaledtiles[image_id] = scaledimage
+
 
     def resize(self, scale):
         old_scale = self.scale
-        self.scale = max(0.01, scale)
+        self.scale = max(0.01, mapscale * scale)
+        self.updatetilecache()
 
         ratio = self.scale / old_scale
+
         old_center = Vector2(self.viewport_size) / 2
         new_center = Vector2(w, h) / 2
 
         self.backpos = new_center - (old_center - self.backpos) * ratio
         self.viewport_size = (w, h)
 
-        mapsize = round(self.map_size * self.scale)
-        self.image = pygame.transform.scale(self.mainbacking, (mapsize, mapsize))
-
     def update(self):
-        self.screen.blit(self.image, (self.backpos.x,self.backpos.y))
+        left = -self.backpos.x / self.scale
+        top = -self.backpos.y / self.scale
 
+        right = left + w / self.scale
+        bottom = top + h / self.scale
+
+        min_x = int(left // self.chunksize)
+        max_x = int(right // self.chunksize)
+        min_y = int(top // self.chunksize)
+        max_y = int(bottom // self.chunksize)
+
+        for cx in range(min_x, max_x + 1):
+            for cy in range(min_y, max_y + 1):
+                for x, y, image, layer in self.chunks.get((cx, cy), []):
+                    scaled_x = round(x * self.scale + self.backpos.x)
+                    scaled_y = round(y * self.scale + self.backpos.y)
+                    scaledimage = self.scaledtiles[id(image)]
+                    self.screen.blit(scaledimage, (scaled_x, scaled_y))
     
 
     def playermove(self,w,a,s,d, movement):
@@ -155,13 +241,13 @@ class entity:
 
         self.sprites = {}
         for direction, sprite in self.source_sprites.items():
-            self.sprites[direction] = pygame.transform.scale(sprite, (200, 200))
+            self.sprites[direction] = pygame.transform.scale(sprite, (spritesize, spritesize))
 
         self.mainentpos = Vector2(w//2 - 100, h//2 - 100)
         self.direction = "stand"
 
     def resize(self,w,h,scale):
-        size = max(1, round(200*scale))
+        size = max(1, round(spritesize * scale))
 
         for direction, sprite in self.source_sprites.items():
             self.sprites[direction] = pygame.transform.scale(sprite, (size, size))
@@ -307,6 +393,8 @@ font = pygame.font.SysFont('freesans', 32)
 tinyfont = pygame.font.SysFont('freesans', 10)
 
 backg = background(screen)
+scale = min(w/ basewidth, h/ baseheight)
+backg.resize(scale)
 entity = entity(screen, w, h)
 menu = menu()
 gui = gui()
