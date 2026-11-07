@@ -113,8 +113,25 @@ class background:
     def __init__(self, screen):
         self.screen = screen
         self.mainbacking = pygame.image.load(ASSET_DIR / "Map.png").convert_alpha()
-        self.image = pygame.transform.scale(self.mainbacking, (6000,6000))
+        self.map_size = 6000
+        self.scale = 1.0
+        self.image = pygame.transform.scale(self.mainbacking, (self.map_size, self.map_size))
         self.backpos = Vector2(0, 0)      
+        self.viewport_size = screen.get_size()
+
+    def resize(self, scale):
+        old_scale = self.scale
+        self.scale = max(0.01, scale)
+
+        ratio = self.scale / old_scale
+        old_center = Vector2(self.viewport_size) / 2
+        new_center = Vector2(w, h) / 2
+
+        self.backpos = new_center - (old_center - self.backpos) * ratio
+        self.viewport_size = (w, h)
+
+        mapsize = round(self.map_size * self.scale)
+        self.image = pygame.transform.scale(self.mainbacking, (mapsize, mapsize))
 
     def update(self):
         self.screen.blit(self.image, (self.backpos.x,self.backpos.y))
@@ -122,14 +139,13 @@ class background:
     
 
     def playermove(self,w,a,s,d, movement):
-        self.backpos.x -= movement.x
-        self.backpos.y -= movement.y
+        self.backpos -= movement * self.scale
 
 class entity:
     def __init__(self, screen, w, h):
         self.screen = screen
 
-        self.sprites = {
+        self.source_sprites = {
             "stand": pygame.image.load(ASSET_DIR / "placeholdermainentity.png").convert_alpha(),
             "w": pygame.image.load(ASSET_DIR / "placeholdermainentityup.png").convert_alpha(),
             "s": pygame.image.load(ASSET_DIR / "placeholdermainentitydown.png").convert_alpha(),
@@ -137,8 +153,9 @@ class entity:
             "d": pygame.image.load(ASSET_DIR / "placeholdermainentityright.png").convert_alpha()
         }
 
-        for direction in self.sprites:
-            self.sprites[direction] = pygame.transform.scale(self.sprites[direction], (200,200))
+        self.sprites = {}
+        for direction, sprite in self.source_sprites.items():
+            self.sprites[direction] = pygame.transform.scale(sprite, (200, 200))
 
         self.mainentpos = Vector2(w//2 - 100, h//2 - 100)
         self.direction = "stand"
@@ -146,8 +163,8 @@ class entity:
     def resize(self,w,h,scale):
         size = max(1, round(200*scale))
 
-        for direction, sprite in self.sprites.items():
-            self.sprites[direction] = pygame.transform.scale(sprite, (size,size))
+        for direction, sprite in self.source_sprites.items():
+            self.sprites[direction] = pygame.transform.scale(sprite, (size, size))
         self.mainentpos = Vector2(w//2-size//2,h//2-size//2)
 
     def move(self, direction):
@@ -182,6 +199,9 @@ class gui:
         self.cornericon.bottomleft = (0, h)
         self.sideicons.size = (round(100 * scale), round(500 * scale))
         self.sideicons.midright = (w, h // 2)
+
+    def hotbar(self):
+        self.hotbar1 = pygame.rect ((0, 0, ))
 
 class menu:
     def __init__(self):
@@ -245,6 +265,7 @@ def resizelayout():
 
     scale  = min(w/basewidth, h/baseheight)
 
+    backg.resize(scale)
     entity.resize(w, h, scale)
     gui.resize(w,h, scale)
     menu.resize(w, h,scale)
@@ -258,7 +279,7 @@ def draw(window, screen, backg, entity):
     backg.screen = screen
     entity.screen = screen
 
-    screen.fill((189, 214, 255))
+    screen.fill((110, 168, 67))
     backg.update()
     entity.draw()
 
