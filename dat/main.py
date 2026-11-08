@@ -123,10 +123,10 @@ def update(dt):
 
         player_world = backg.getplayerworldpos(entity.hitbox.center)
 
-        newwworld_y = player_world + Vector2(0, movement.y)
+        newworld_y = player_world + Vector2(0, movement.y)
 
         newhitbox_y = entity.hitbox.copy()
-        newhitbox_y.center = (round(newwworld_y.x), round(newwworld_y.y))
+        newhitbox_y.center = (round(newworld_y.x), round(newworld_y.y))
 
         if not backg.checkcollision(newhitbox_y):
             backg.playermove(False, False, False, False, Vector2(0, movement.y))
@@ -223,7 +223,7 @@ class background:
         self.backpos = new_center - (old_center - self.backpos) * ratio
         self.viewport_size = (w, h)
 
-    def update(self):
+    def update(self, above_player=False):
         left = -self.backpos.x / self.scale
         top = -self.backpos.y / self.scale
 
@@ -238,6 +238,10 @@ class background:
         for cx in range(min_x, max_x + 1):
             for cy in range(min_y, max_y + 1):
                 for x, y, image, layer in self.chunks.get((cx, cy), []):
+                    isaboveplayer = (self.tmx.layers[layer].name in ("Top","Fence"))
+
+                    if isaboveplayer != above_player:
+                        continue
                     scaled_x = round(x * self.scale + self.backpos.x)
                     scaled_y = round(y * self.scale + self.backpos.y)
                     scaledimage = self.scaledtiles[id(image)]
@@ -301,10 +305,49 @@ class gui:
         self.sideicons = pygame.Rect(0, 0, 100, 500)
         self.sideicons.midright = (w, h // 2)
 
+        self.slot_count = 8
+        self.slot_size = 65
+        self.slot_gap = 8
+
+        self.slots = []
+        self.createslots()
+
+        self.slotfont = pygame.font.Font(ASSET_DIR / "SmoochSans-VariableFont_wght.ttf", 18)
+
+    def createslots(self):
+        self.slots = []
+
+        total_width = (self.slot_count * self.slot_size) + (self.slot_count-1) * self.slot_gap
+
+        start_x = self.hotbar.centerx - total_width // 2
+
+        for i in range (self.slot_count):
+            slot = pygame.Rect(start_x + i * (self.slot_size + self.slot_gap), self.hotbar.centery - self.slot_size // 2, self.slot_size, self.slot_size)
+
+            self.slots.append(slot)
+
+        
     def update(self):
-        pygame.draw.rect(screen, (60, 60, 60), self.hotbar, border_radius=8)
+        hotbar_surface = pygame.Surface(self.hotbar.size, pygame.SRCALPHA)
+
+        hotbar_surface.fill((0, 0, 0, 0))
+        screen.blit(hotbar_surface, self.hotbar)
+
         pygame.draw.rect(screen, (90, 140, 90), self.cornericon,border_radius=8, border_top_right_radius=30)        
         pygame.draw.rect(screen, (80, 80, 80), self.sideicons, border_radius=8)
+
+        for i, slot in enumerate(self.slots):
+            slot_surface = pygame.Surface(slot.size, pygame.SRCALPHA)
+
+            pygame.draw.rect(slot_surface, (35, 35,35, 150), slot_surface.get_rect(), border_radius=8)
+
+            screen.blit(slot_surface, slot)
+
+            pygame.draw.rect(screen, (210, 210, 210, 180), slot, width = 2, border_radius=5)
+
+            number = self.slotfont.render(str(i+1), True, (255,255,255))
+
+            screen.blit(number, (slot.x + 6, slot.y + 4))
 
     def resize(self, w, h, scale):
         self.hotbar.size = (round(700 * scale), round(150 * scale))
@@ -314,9 +357,11 @@ class gui:
         self.cornericon.bottomleft = (0, h)
         self.sideicons.size = (round(100 * scale), round(500 * scale))
         self.sideicons.midright = (w, h // 2)
+        self.slot_size = max(1, round(65 * scale))
+        self.slot_gap = max(1, round(8 * scale))
+        self.createslots()
+        self.slotfont = pygame.font.Font(ASSET_DIR / "SmoochSans-VariableFont_wght.ttf", max(1, round(18*scale)))
 
-    def hotbar(self):
-        self.hotbar1 = pygame.rect ((0, 0, ))
 
 class menu:
     def __init__(self):
@@ -395,8 +440,9 @@ def draw(window, screen, backg, entity):
     entity.screen = screen
 
     screen.fill((110, 168, 67))
-    backg.update()
+    backg.update(False)
     entity.draw()
+    backg.update(True)
 
     # pygame.draw.rect(screen, (255, 0, 0), entity.hitbox, 2)
 
