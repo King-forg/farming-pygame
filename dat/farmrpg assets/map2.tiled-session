@@ -1,6 +1,8 @@
 {
-    "activeFile": "",
+    "activeFile": "map2.tmx",
     "expandedProjectPaths": [
+        "Tiles",
+        "."
     ],
     "fileStates": {
         "Fence's copiar.tsx": {
@@ -40,6 +42,14 @@
             "scaleInEditor": 1
         },
         "Tiles/Maple Tree.tsx": {
+            "scaleInDock": 4,
+            "scaleInEditor": 5.5
+        },
+        "Tiles/Road copiar.tsx": {
+            "scaleInDock": 1,
+            "scaleInEditor": 1
+        },
+        "Tiles/Spring Crops.tsx": {
             "scaleInDock": 1,
             "scaleInEditor": 1
         },
@@ -48,7 +58,7 @@
             "scaleInEditor": 1
         },
         "Tiles/farmrpg.tsx": {
-            "scaleInDock": 1,
+            "scaleInDock": 3,
             "scaleInEditor": 1
         },
         "chest.tsx": {
@@ -58,6 +68,14 @@
         "farmrpg.tsx": {
             "scaleInDock": 3,
             "scaleInEditor": 8
+        },
+        "map2.tmx": {
+            "scale": 5.5,
+            "selectedLayer": 1,
+            "viewCenter": {
+                "x": 1578.3636363636365,
+                "y": 1874.1818181818182
+            }
         }
     },
     "last.exportedFilePath": "C:/Users/macke/GIT CLONE/farming/farming-pygame/dat/farmrpg assets",
@@ -67,21 +85,30 @@
     "map.lastUsedFormat": "tmx",
     "map.width": 200,
     "openFiles": [
+        "map2.tmx",
+        "Tiles/chest.tsx",
+        "Tiles/farmrpg.tsx",
+        "Tiles/Fence's copiar.tsx",
+        "Tiles/House.tsx",
+        "Tiles/Interior.tsx",
+        "Tiles/Maple Tree.tsx",
+        "Tiles/Road copiar.tsx",
+        "Tiles/Spring Crops.tsx"
     ],
     "project": "map2.tiled-project",
     "recentFiles": [
-        "Maple Tree.tsx",
+        "Tiles/Spring Crops.tsx",
+        "Tiles/Road copiar.tsx",
         "Tiles/Maple Tree.tsx",
         "Tiles/Interior.tsx",
         "Tiles/House.tsx",
         "Tiles/Fence's copiar.tsx",
         "Tiles/farmrpg.tsx",
         "Tiles/chest.tsx",
+        "map2.tmx",
+        "Maple Tree.tsx",
         "chest.tsx",
-        "House.tsx",
-        "Interior.tsx",
-        "Road copiar.tsx",
-        "Fence's copiar.tsx"
+        "House.tsx"
     ],
     "tileset.lastUsedFormat": "tsx",
     "tileset.tileSize": {

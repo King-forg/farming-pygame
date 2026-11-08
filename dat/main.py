@@ -112,13 +112,24 @@ def update(dt):
     if velocity > 0:
         movement = movement_direction * velocity * dt
         player_world = backg.getplayerworldpos(entity.hitbox.center)
-        newworld = player_world + movement
 
-        newhitbox = entity.hitbox.copy()
-        newhitbox.center = (round(newworld.x),round(newworld.y))
+        newworld_x = player_world + Vector2(movement.x, 0)
 
-        if not backg.checkcollision(newhitbox):
-            backg.playermove(False, False, False, False, movement)
+        newhitbox_x = entity.hitbox.copy()
+        newhitbox_x.center = (round(newworld_x.x),round(newworld_x.y))
+
+        if not backg.checkcollision(newhitbox_x):
+            backg.playermove(False, False, False, False, Vector2(movement.x,0))
+
+        player_world = backg.getplayerworldpos(entity.hitbox.center)
+
+        newwworld_y = player_world + Vector2(0, movement.y)
+
+        newhitbox_y = entity.hitbox.copy()
+        newhitbox_y.center = (round(newwworld_y.x), round(newwworld_y.y))
+
+        if not backg.checkcollision(newhitbox_y):
+            backg.playermove(False, False, False, False, Vector2(0, movement.y))
     else:
         entity.stand()
 
